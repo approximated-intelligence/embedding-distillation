@@ -1,6 +1,8 @@
-# Embedding Model Distillation Framework
+# Embedding Model Distillation
 
 A PyTorch-based framework for distilling knowledge from large embedding models (teacher) into smaller, more efficient models (student) using learned attention pooling mechanisms.
+
+<img alt="Model Distillation" src="https://repository-images.githubusercontent.com/1046829454/0f3ff3d6-fbe8-4eb7-91a3-f079c207b4d4" style="width: 100%; height: auto;" />
 
 ## Overview
 
