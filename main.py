@@ -1,29 +1,15 @@
 import torch
-
 from FlagEmbedding import BGEM3FlagModel
-
-from transformers import AutoTokenizer
 from transformers import AutoModel
-from transformers import Trainer
+from transformers import AutoTokenizer
 from transformers import TrainingArguments
-from datasets import load_dataset
-from datasets import concatenate_datasets
-from datasets import Dataset
 
-from data_loading import batch_expand_germanquad
-from data_loading import batch_expand_germandpr
-from data_loading import batch_expand_mmarco
-from data_loading import load_germanquad
 from data_loading import load_germandpr
-from data_loading import load_mmarco
-from data_loading import load_mmarco_multilang
+from data_loading import load_germanquad
 from data_loading import make_cross_product_dataset
 from data_loading import passthrough_collator
-
 from model_support import batch_encode
-from model_support import make_retriever
 from model_support import batch_encode_bge_m3
-
 from trainer import PooledEmbedderTrainer
 
 
@@ -50,7 +36,9 @@ def main():
     print(dataset[0])
 
     # Load datasets
-    train_dataset = load_germandpr()  # returns HF Dataset with 'query', 'passage', 'label'
+    train_dataset = (
+        load_germandpr()
+    )  # returns HF Dataset with 'query', 'passage', 'label'
     print("\n ######################   DATASET   ########################")
     print(train_dataset)
     print(train_dataset[0])
@@ -59,14 +47,16 @@ def main():
     print(train_dataset[3])
     print(train_dataset[4])
 
-    eval_dataset = load_germanquad()  # returns HF Dataset with 'query', 'passage', 'label'
+    eval_dataset = (
+        load_germanquad()
+    )  # returns HF Dataset with 'query', 'passage', 'label'
     print(eval_dataset)
     print(eval_dataset[0])
 
     model_class = BGEM3FlagModel(
         "models/bge-m3",
         pooling_method="mean",  # "last" "cls"
-        # use_fp16=True # Setting use_fp16 to True speeds up computation with a slight performance degradation
+        # use_fp16=True,  # Setting use_fp16 to True speeds up computation with a slight performance degradation
     )
 
     bge_m3_tokenizer = model_class.tokenizer
