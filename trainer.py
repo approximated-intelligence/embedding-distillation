@@ -52,12 +52,16 @@ class PooledEmbedderTrainer(Trainer):
         self.batch_size = batch_size
 
         # Freeze parent model
-        for param in model.parameters():
+        for param in self.model.parameters():
             param.requires_grad = False
 
         # Ensure activation_head is trainable
         for param in self.activation_head.parameters():
             param.requires_grad = True
+
+        # Make the HF Trainer aware of the activation_head
+        self.model.activation_head = self.activation_head
+
 
     def create_optimizer(self):
         if self.optimizer is None:
