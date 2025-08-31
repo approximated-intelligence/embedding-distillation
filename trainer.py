@@ -1,28 +1,26 @@
 import torch
-
+from datasets import Dataset
+from datasets import concatenate_datasets
+from datasets import load_dataset
 from FlagEmbedding import BGEM3FlagModel
-
-from transformers import AutoTokenizer
 from transformers import AutoModel
+from transformers import AutoTokenizer
 from transformers import Trainer
 from transformers import TrainingArguments
-from datasets import load_dataset
-from datasets import concatenate_datasets
-from datasets import Dataset
 
-from data_loading import batch_expand_germanquad
 from data_loading import batch_expand_germandpr
+from data_loading import batch_expand_germanquad
 from data_loading import batch_expand_mmarco
-from data_loading import load_germanquad
 from data_loading import load_germandpr
+from data_loading import load_germanquad
 from data_loading import load_mmarco
 from data_loading import load_mmarco_multilang
 from data_loading import make_cross_product_dataset
 from data_loading import passthrough_collator
-
 from model_support import batch_encode
-from model_support import make_retriever
 from model_support import batch_encode_bge_m3
+from model_support import make_retriever
+
 
 class PooledEmbedderTrainer(Trainer):
     def __init__(
@@ -61,7 +59,6 @@ class PooledEmbedderTrainer(Trainer):
 
         # Make the HF Trainer aware of the activation_head
         self.model.activation_head = self.activation_head
-
 
     def create_optimizer(self):
         if self.optimizer is None:
@@ -155,6 +152,7 @@ class PooledEmbedderTrainer(Trainer):
 
         return (loss, sim_student) if return_outputs else loss
 
+
 def main():
     query_max_length = 512
     query_pad_to = 16
@@ -168,8 +166,12 @@ def main():
     torch.set_default_device(device)
 
     # Load datasets
-    train_dataset = load_germandpr()  # returns HF Dataset with 'query', 'passage', 'label'
-    eval_dataset = load_germanquad()  # returns HF Dataset with 'query', 'passage', 'label'
+    train_dataset = (
+        load_germandpr()
+    )  # returns HF Dataset with 'query', 'passage', 'label'
+    eval_dataset = (
+        load_germanquad()
+    )  # returns HF Dataset with 'query', 'passage', 'label'
 
     model_class = BGEM3FlagModel(
         "models/bge-m3",
@@ -227,6 +229,6 @@ def main():
 
     trainer.train()
 
+
 if __name__ == "__main__":
     main()
-
