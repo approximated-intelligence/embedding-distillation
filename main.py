@@ -66,7 +66,7 @@ def main():
     model_class = BGEM3FlagModel(
         "models/bge-m3",
         pooling_method="mean",  # "last" "cls"
-        use_fp16=True # Setting use_fp16 to True speeds up computation with a slight performance degradation
+        # use_fp16=True # Setting use_fp16 to True speeds up computation with a slight performance degradation
     )
 
     bge_m3_tokenizer = model_class.tokenizer
