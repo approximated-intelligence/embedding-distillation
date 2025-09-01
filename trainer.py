@@ -2,8 +2,6 @@ import os
 
 import torch
 from FlagEmbedding import BGEM3FlagModel
-from transformers import AutoConfig
-from transformers import AutoModel
 from transformers import AutoTokenizer
 from transformers import Trainer
 from transformers import TrainingArguments
@@ -278,18 +276,18 @@ def main():
 
     student_tokenizer = AutoTokenizer.from_pretrained("models/ettin-encoder-32m")
     student_model = ModernBertWithActivationHeadModel.from_pretrained(
-        "models/ettin-encoder-32m"
+        "models/ettin-encoder-17m"
     )
 
     training_args = TrainingArguments(
         output_dir="./output",
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        num_train_epochs=3,
+        num_train_epochs=2,
         learning_rate=learning_rate,
-        logging_steps=1,
+        logging_steps=128,
         save_strategy="steps",
-        save_steps=1,
+        save_steps=128,
         # eval_strategy="epoch",
         remove_unused_columns=False,
         dataloader_num_workers=0,
