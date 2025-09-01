@@ -2,8 +2,6 @@ import os
 
 import torch
 from FlagEmbedding import BGEM3FlagModel
-from transformers import AutoConfig
-from transformers import AutoModel
 from transformers import AutoTokenizer
 from transformers import Trainer
 from transformers import TrainingArguments
@@ -173,17 +171,6 @@ class AttachedPooledEmbedderTrainer(Trainer):
         self.passage_pad_to = passage_pad_to
         self.batch_size = batch_size
 
-    def create_optimizer(self):
-        if self.optimizer is None:
-            self.optimizer = torch.optim.AdamW(
-                self.model.activation_head.parameters(),
-                lr=self.args.learning_rate,
-                betas=(self.args.adam_beta1, self.args.adam_beta2),
-                eps=self.args.adam_epsilon,
-                weight_decay=self.args.weight_decay,
-            )
-        return self.optimizer
-
     def compute_loss(
         self, model, inputs, num_items_in_batch=None, return_outputs=False
     ):
@@ -264,6 +251,7 @@ def main():
     passage_pad_to = 64
     batch_size = 32
     dropout = 0.1
+    learning_rate = 1e-3
 
     # set default device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -288,21 +276,25 @@ def main():
 
     student_tokenizer = AutoTokenizer.from_pretrained("models/ettin-encoder-32m")
     student_model = ModernBertWithActivationHeadModel.from_pretrained(
-        "models/ettin-encoder-32m"
+        "models/ettin-encoder-17m"
     )
 
     training_args = TrainingArguments(
         output_dir="./output",
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        num_train_epochs=3,
-        learning_rate=1e-3,
-        logging_steps=1,
+        num_train_epochs=2,
+        learning_rate=learning_rate,
+        logging_steps=128,
         save_strategy="steps",
-        save_steps=1,
+        save_steps=128,
         # eval_strategy="epoch",
         remove_unused_columns=False,
         dataloader_num_workers=0,
+    )
+
+    optimizer = torch.optim.AdamW(
+        [p for p in student_model.parameters() if p.requires_grad], lr=learning_rate
     )
 
     trainer = AttachedPooledEmbedderTrainer(
@@ -318,6 +310,7 @@ def main():
         train_dataset=train_dataset,
         # eval_dataset=eval_dataset,
         data_collator=passthrough_collator,
+        optimizers=(optimizer, None),
         args=training_args,
     )
 

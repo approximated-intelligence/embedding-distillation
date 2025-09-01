@@ -3,6 +3,7 @@ import torch.nn as nn
 from transformers import AutoConfig
 from transformers import AutoModel
 from transformers import ModernBertConfig
+from transformers import ModernBertForMaskedLM
 from transformers import ModernBertModel
 
 
@@ -10,7 +11,7 @@ class ModernBertWithActivationHeadConfig(ModernBertConfig):
     model_type = "modern-bert-with-activation-head"
 
 
-class ModernBertWithActivationHeadModel(ModernBertModel):
+class ModernBertWithActivationHeadModel(ModernBertForMaskedLM):
     config_class = ModernBertWithActivationHeadConfig
 
     def __init__(self, config: ModernBertConfig):
@@ -36,19 +37,27 @@ class ModernBertWithActivationHeadModel(ModernBertModel):
 
     def forward(self, input_ids, attention_mask, **kwargs):
         with torch.no_grad():
-            hidden_states = (
-                super()
-                .forward(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
-                .last_hidden_state.detach()
+            hidden = (
+                # super()
+                # .forward(input_ids=input_ids, attention_mask=attention_mask, **kwargs).last_hidden_state.detach()
+                self.model(
+                    input_ids=input_ids, attention_mask=attention_mask
+                ).last_hidden_state.detach()
             )
 
         if self.training:
-            weights = self.activation_head(hidden_states) * attention_mask.unsqueeze(-1).float()
-            embeddings = torch.sum(hidden_states * weights, dim=1)
+            scores = self.activation_head(hidden)
+            mask = attention_mask.unsqueeze(-1)
+            embeddings = torch.sum(hidden * scores * mask, dim=1) / mask.sum(
+                dim=1
+            ).clamp(min=1)
         else:
             with torch.no_grad():
-                weights = self.activation_head(hidden_states) * attention_mask.unsqueeze(-1).float()
-                embeddings = torch.sum(hidden_states * weights, dim=1)
+                scores = self.activation_head(hidden)
+                mask = attention_mask.unsqueeze(-1)
+                embeddings = torch.sum(hidden * scores * mask, dim=1) / mask.sum(
+                    dim=1
+                ).clamp(min=1)
 
         return {
             "embeddings": embeddings,
