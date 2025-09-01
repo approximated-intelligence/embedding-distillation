@@ -1,7 +1,7 @@
 import torch
 
 
-def batch_encode(
+def batch_encode_detached(
     model,
     tokenizer,
     scorer,
@@ -33,6 +33,37 @@ def batch_encode(
         mask = inputs["attention_mask"].unsqueeze(-1)
         batch_emb = (hidden * scores * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
         # batch_emb = (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
+
+        embeddings.append(batch_emb)
+
+    return torch.cat(embeddings, dim=0)
+
+
+def batch_encode_attached(
+    model,
+    tokenizer,
+    scorer,
+    texts,
+    batch_size=32,
+    padding="longest",
+    pad_to="16",
+    truncation=True,
+    max_length=8192,
+):
+    embeddings = []
+
+    for i in range(0, len(texts), batch_size):
+        in_batch = texts[i : i + batch_size]
+        inputs = tokenizer(
+            in_batch,
+            return_tensors="pt",
+            padding=padding,
+            pad_to_multiple_of=pad_to,
+            truncation=truncation,
+            max_length=max_length,
+        ).to(model.device)
+
+        batch_emb = model(**inputs)["embeddings"]
 
         embeddings.append(batch_emb)
 
