@@ -8,9 +8,9 @@ from data_loading import load_germandpr
 from data_loading import load_germanquad
 from data_loading import make_cross_product_dataset
 from data_loading import passthrough_collator
-from model_support import batch_encode
 from model_support import batch_encode_bge_m3
-from trainer import PooledEmbedderTrainer
+from model_support import batch_encode_detached
+from trainer import DetachedPooledEmbedderTrainer
 
 
 def main():
@@ -109,7 +109,7 @@ def main():
         print(sim_teacher)
 
         # Student embeddings
-        query_student_emb = batch_encode(
+        query_student_emb = batch_encode_detached(
             ettin_model,
             ettin_tokenizer,
             activation_head,
@@ -120,7 +120,7 @@ def main():
             max_length=query_max_length,
             pad_to=query_pad_to,
         )
-        passage_student_emb = batch_encode(
+        passage_student_emb = batch_encode_detached(
             ettin_model,
             ettin_tokenizer,
             activation_head,
@@ -147,13 +147,14 @@ def main():
         num_train_epochs=3,
         learning_rate=1e-3,
         logging_steps=1,
-        save_strategy="epoch",
-        eval_strategy="epoch",
+        save_strategy="steps",
+        save_steps=1,
+        # eval_strategy="epoch",
         remove_unused_columns=False,
         dataloader_num_workers=0,
     )
 
-    trainer = PooledEmbedderTrainer(
+    trainer = DetachedPooledEmbedderTrainer(
         model=ettin_model,
         model_tokenizer=ettin_tokenizer,
         activation_head=activation_head,
@@ -165,7 +166,7 @@ def main():
         passage_pad_to=passage_pad_to,
         batch_size=batch_size,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        # eval_dataset=eval_dataset,
         data_collator=passthrough_collator,
         args=training_args,
     )

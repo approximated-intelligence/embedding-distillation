@@ -1,28 +1,21 @@
+import os
+
 import torch
-from datasets import Dataset
-from datasets import concatenate_datasets
-from datasets import load_dataset
 from FlagEmbedding import BGEM3FlagModel
-from transformers import AutoModel
 from transformers import AutoTokenizer
 from transformers import Trainer
 from transformers import TrainingArguments
 
-from data_loading import batch_expand_germandpr
-from data_loading import batch_expand_germanquad
-from data_loading import batch_expand_mmarco
 from data_loading import load_germandpr
 from data_loading import load_germanquad
-from data_loading import load_mmarco
-from data_loading import load_mmarco_multilang
-from data_loading import make_cross_product_dataset
 from data_loading import passthrough_collator
-from model_support import batch_encode
+from model_definition import ModernBertWithActivationHeadModel
+from model_support import batch_encode_attached
 from model_support import batch_encode_bge_m3
-from model_support import make_retriever
+from model_support import batch_encode_detached
 
 
-class PooledEmbedderTrainer(Trainer):
+class DetachedPooledEmbedderTrainer(Trainer):
     def __init__(
         self,
         model=None,
@@ -118,7 +111,7 @@ class PooledEmbedderTrainer(Trainer):
             sim_teacher = (sim_teacher - sim_teacher.mean()) / sim_teacher.std()
 
         # Student embeddings
-        query_student_emb = batch_encode(
+        query_student_emb = batch_encode_detached(
             model,
             self.model_tokenizer,
             self.activation_head,
@@ -129,7 +122,7 @@ class PooledEmbedderTrainer(Trainer):
             max_length=self.query_max_length,
             pad_to=self.query_pad_to,
         )
-        passage_student_emb = batch_encode(
+        passage_student_emb = batch_encode_detached(
             model,
             self.model_tokenizer,
             self.activation_head,
@@ -140,6 +133,115 @@ class PooledEmbedderTrainer(Trainer):
             max_length=self.passage_max_length,
             pad_to=self.passage_pad_to,
         )
+
+        # Similarity matrix
+        sim_student = query_student_emb @ passage_student_emb.transpose(-2, -1)
+
+        # Z-score normalization
+        sim_student = (sim_student - sim_student.mean()) / sim_student.std()
+
+        # MSE loss
+        loss = torch.nn.functional.mse_loss(sim_student, sim_teacher)
+
+        return (loss, sim_student) if return_outputs else loss
+
+
+class AttachedPooledEmbedderTrainer(Trainer):
+    def __init__(
+        self,
+        model=None,
+        model_tokenizer=None,
+        bge_m3_model=None,
+        bge_m3_tokenizer=None,
+        query_max_length=None,
+        query_pad_to=None,
+        passage_max_length=None,
+        passage_pad_to=None,
+        batch_size=None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, model=model, **kwargs)
+        self.model_tokenizer = model_tokenizer
+        self.bge_m3_model = bge_m3_model
+        self.bge_m3_tokenizer = bge_m3_tokenizer
+        self.query_max_length = query_max_length
+        self.query_pad_to = query_pad_to
+        self.passage_max_length = passage_max_length
+        self.passage_pad_to = passage_pad_to
+        self.batch_size = batch_size
+
+    def create_optimizer(self):
+        if self.optimizer is None:
+            self.optimizer = torch.optim.AdamW(
+                self.model.pooling_head.parameters(),
+                lr=self.args.learning_rate,
+                betas=(self.args.adam_beta1, self.args.adam_beta2),
+                eps=self.args.adam_epsilon,
+                weight_decay=self.args.weight_decay,
+            )
+        return self.optimizer
+
+    def compute_loss(
+        self, model, inputs, num_items_in_batch=None, return_outputs=False
+    ):
+        # inputs contains raw 'query', 'passage', 'label'
+        # print(inputs)
+        # exit(1)
+        queries = inputs["query"]
+        passages = inputs["passage"]
+        # labels = inputs["label"].float()
+
+        with torch.no_grad():
+            # Teacher embeddings
+            query_teacher_emb = batch_encode_bge_m3(
+                self.bge_m3_model,
+                self.bge_m3_tokenizer,
+                queries,
+                batch_size=self.batch_size,
+                padding="longest",
+                truncation=True,
+                max_length=self.query_max_length,
+                pad_to=self.query_pad_to,
+            )
+            passage_teacher_emb = batch_encode_bge_m3(
+                self.bge_m3_model,
+                self.bge_m3_tokenizer,
+                passages,
+                batch_size=self.batch_size,
+                padding="longest",
+                truncation=True,
+                max_length=self.passage_max_length,
+                pad_to=self.passage_pad_to,
+            )
+
+            # Similarity matrix
+            sim_teacher = query_teacher_emb @ passage_teacher_emb.transpose(-2, -1)
+
+            # Z-score normalization
+            sim_teacher = (sim_teacher - sim_teacher.mean()) / sim_teacher.std()
+
+        # Student embeddings
+        query_student_emb = batch_encode_attached(
+            model,
+            self.model_tokenizer,
+            queries,
+            batch_size=self.batch_size,
+            padding="longest",
+            truncation=True,
+            max_length=self.query_max_length,
+            pad_to=self.query_pad_to,
+        )["embeddings"]
+        passage_student_emb = batch_encode_attached(
+            model,
+            self.model_tokenizer,
+            passages,
+            batch_size=self.batch_size,
+            padding="longest",
+            truncation=True,
+            max_length=self.passage_max_length,
+            pad_to=self.passage_pad_to,
+        )["embeddings"]
 
         # Similarity matrix
         sim_student = query_student_emb @ passage_student_emb.transpose(-2, -1)
@@ -182,37 +284,28 @@ def main():
     bge_m3_tokenizer = model_class.tokenizer
     bge_m3_model = model_class.model
 
-    ettin_tokenizer = AutoTokenizer.from_pretrained("models/ettin-encoder-32m")
-    ettin_model = AutoModel.from_pretrained("models/ettin-encoder-32m")
-
-    # get hidden dim from parent model config
-    hidden_dim = ettin_model.config.hidden_size
-
-    # activation head for learned pooling
-    activation_head = torch.nn.Linear(hidden_dim, 1, bias=False).to(ettin_model.device)
-    # activation_head = torch.nn.Sequential(
-    #     torch.nn.Linear(hidden_dim, 2 * hidden_dim),
-    #     torch.nn.ReLU(),
-    #     torch.nn.Dropout(p=dropout),
-    #     torch.nn.Linear(2 * hidden_dim, 1),
-    # ).to(ettin_model.device)
+    student_tokenizer = AutoTokenizer.from_pretrained("models/ettin-encoder-32m")
+    student_model = ModernBertWithActivationHeadModel.from_pretrained(
+        "models/ettin-encoder-32m"
+    )
 
     training_args = TrainingArguments(
         output_dir="./output",
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=16,
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
         num_train_epochs=3,
         learning_rate=1e-3,
         logging_steps=1,
-        save_strategy="epoch",
-        eval_strategy="epoch",
+        save_strategy="steps",
+        save_steps=1,
+        # eval_strategy="epoch",
         remove_unused_columns=False,
         dataloader_num_workers=0,
     )
 
-    trainer = PooledEmbedderTrainer(
-        model=ettin_model,
-        model_tokenizer=ettin_tokenizer,
+    trainer = AttachedPooledEmbedderTrainer(
+        model=student_model,
+        model_tokenizer=student_tokenizer,
         activation_head=activation_head,
         bge_m3_model=bge_m3_model,
         bge_m3_tokenizer=bge_m3_tokenizer,
@@ -222,7 +315,7 @@ def main():
         passage_pad_to=passage_pad_to,
         batch_size=batch_size,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        # eval_dataset=eval_dataset,
         data_collator=passthrough_collator,
         args=training_args,
     )
