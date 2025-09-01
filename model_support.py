@@ -42,7 +42,6 @@ def batch_encode_detached(
 def batch_encode_attached(
     model,
     tokenizer,
-    scorer,
     texts,
     batch_size=32,
     padding="longest",
