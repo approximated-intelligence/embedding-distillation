@@ -2,6 +2,8 @@ import os
 
 import torch
 from FlagEmbedding import BGEM3FlagModel
+from transformers import AutoConfig
+from transformers import AutoModel
 from transformers import AutoTokenizer
 from transformers import Trainer
 from transformers import TrainingArguments
@@ -174,7 +176,7 @@ class AttachedPooledEmbedderTrainer(Trainer):
     def create_optimizer(self):
         if self.optimizer is None:
             self.optimizer = torch.optim.AdamW(
-                self.model.pooling_head.parameters(),
+                self.model.activation_head.parameters(),
                 lr=self.args.learning_rate,
                 betas=(self.args.adam_beta1, self.args.adam_beta2),
                 eps=self.args.adam_epsilon,
@@ -231,7 +233,7 @@ class AttachedPooledEmbedderTrainer(Trainer):
             truncation=True,
             max_length=self.query_max_length,
             pad_to=self.query_pad_to,
-        )["embeddings"]
+        )
         passage_student_emb = batch_encode_attached(
             model,
             self.model_tokenizer,
@@ -241,7 +243,7 @@ class AttachedPooledEmbedderTrainer(Trainer):
             truncation=True,
             max_length=self.passage_max_length,
             pad_to=self.passage_pad_to,
-        )["embeddings"]
+        )
 
         # Similarity matrix
         sim_student = query_student_emb @ passage_student_emb.transpose(-2, -1)
@@ -306,7 +308,6 @@ def main():
     trainer = AttachedPooledEmbedderTrainer(
         model=student_model,
         model_tokenizer=student_tokenizer,
-        activation_head=activation_head,
         bge_m3_model=bge_m3_model,
         bge_m3_tokenizer=bge_m3_tokenizer,
         query_max_length=query_max_length,
