@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from transformers import AutoConfig
 from transformers import AutoModel
 from transformers import ModernBertConfig
 from transformers import ModernBertModel
@@ -30,7 +31,7 @@ class ModernBertWithActivationHeadModel(ModernBertModel):
         # HF weight init for new layers
         self.post_init()
 
-        for name, param in model.named_parameters():
+        for name, param in self.named_parameters():
             param.requires_grad = name.startswith("activation_head")
 
     def forward(self, input_ids, attention_mask, **kwargs):
@@ -42,15 +43,15 @@ class ModernBertWithActivationHeadModel(ModernBertModel):
             )
 
         if self.training:
-            weights = self.activation_head(hidden_states) * attention_mask.float()
-            embedding = torch.sum(hidden_states * weights, dim=1)
+            weights = self.activation_head(hidden_states) * attention_mask.unsqueeze(-1).float()
+            embeddings = torch.sum(hidden_states * weights, dim=1)
         else:
             with torch.no_grad():
-                weights = self.activation_head(hidden_states) * attention_mask.float()
-                embedding = torch.sum(hidden_states * weights, dim=1)
+                weights = self.activation_head(hidden_states) * attention_mask.unsqueeze(-1).float()
+                embeddings = torch.sum(hidden_states * weights, dim=1)
 
         return {
-            "embedding": embedding,
+            "embeddings": embeddings,
         }
 
     @classmethod
