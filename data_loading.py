@@ -1,12 +1,6 @@
-import torch
 from datasets import Dataset
 from datasets import concatenate_datasets
 from datasets import load_dataset
-from FlagEmbedding import BGEM3FlagModel
-from transformers import AutoModel
-from transformers import AutoTokenizer
-from transformers import Trainer
-from transformers import TrainingArguments
 
 
 def batch_expand_germanquad(batch):
