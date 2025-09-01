@@ -173,17 +173,6 @@ class AttachedPooledEmbedderTrainer(Trainer):
         self.passage_pad_to = passage_pad_to
         self.batch_size = batch_size
 
-    def create_optimizer(self):
-        if self.optimizer is None:
-            self.optimizer = torch.optim.AdamW(
-                self.model.activation_head.parameters(),
-                lr=self.args.learning_rate,
-                betas=(self.args.adam_beta1, self.args.adam_beta2),
-                eps=self.args.adam_epsilon,
-                weight_decay=self.args.weight_decay,
-            )
-        return self.optimizer
-
     def compute_loss(
         self, model, inputs, num_items_in_batch=None, return_outputs=False
     ):
@@ -264,6 +253,7 @@ def main():
     passage_pad_to = 64
     batch_size = 32
     dropout = 0.1
+    learning_rate = 1e-3
 
     # set default device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -296,13 +286,17 @@ def main():
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
         num_train_epochs=3,
-        learning_rate=1e-3,
+        learning_rate=learning_rate,
         logging_steps=1,
         save_strategy="steps",
         save_steps=1,
         # eval_strategy="epoch",
         remove_unused_columns=False,
         dataloader_num_workers=0,
+    )
+
+    optimizer = torch.optim.AdamW(
+        [p for p in student_model.parameters() if p.requires_grad], lr=learning_rate
     )
 
     trainer = AttachedPooledEmbedderTrainer(
@@ -318,6 +312,7 @@ def main():
         train_dataset=train_dataset,
         # eval_dataset=eval_dataset,
         data_collator=passthrough_collator,
+        optimizers=(optimizer, None),
         args=training_args,
     )
 
