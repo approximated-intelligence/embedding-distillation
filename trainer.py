@@ -257,6 +257,9 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_default_device(device)
 
+    # use fast float32 computations
+    torch.set_float32_matmul_precision('high')
+
     # Load datasets
     train_dataset = (
         load_germandpr()
