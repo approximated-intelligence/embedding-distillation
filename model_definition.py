@@ -65,14 +65,14 @@ class ModernBertWithActivationHeadModel(ModernBertForMaskedLM):
         if self.training:
             scores = torch.relu(self.activation_head(hidden))
             mask = attention_mask.unsqueeze(-1)
-            embeddings = torch.sum(hidden * scores * mask, dim=1) / mask.sum(
+            embeddings = torch.sum(scores * mask * hidden, dim=1) / mask.sum(
                 dim=1
             ).clamp(min=1)
         else:
             with torch.no_grad():
                 scores = torch.relu(self.activation_head(hidden))
                 mask = attention_mask.unsqueeze(-1)
-                embeddings = torch.sum(hidden * scores * mask, dim=1) / mask.sum(
+                embeddings = torch.sum(scores * mask * hidden, dim=1) / mask.sum(
                     dim=1
                 ).clamp(min=1)
 
