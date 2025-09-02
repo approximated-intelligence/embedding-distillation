@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoConfig
 from transformers import AutoModel
+from transformers import AutoModelForMaskedLM
 from transformers import ModernBertConfig
 from transformers import ModernBertForMaskedLM
 from transformers import ModernBertModel
@@ -75,5 +76,8 @@ AutoConfig.register(
     "modern-bert-with-activation-head", ModernBertWithActivationHeadConfig
 )
 AutoModel.register(
+    ModernBertWithActivationHeadConfig, ModernBertWithActivationHeadModel
+)
+AutoModelForMaskedLM.register(
     ModernBertWithActivationHeadConfig, ModernBertWithActivationHeadModel
 )
