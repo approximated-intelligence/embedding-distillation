@@ -33,8 +33,19 @@ class ModernBertWithActivationHeadModel(ModernBertForMaskedLM):
         # HF weight init for new layers
         self.post_init()
 
-        for name, param in self.named_parameters():
-            param.requires_grad = name.startswith("activation_head")
+     def setup_for_training(self):
+        # Freeze original layers
+        for p in self.model.parameters():
+            p.requires_grad = False
+        for p in self.head.parameters():
+            p.requires_grad = False
+        for p in self.decoder.parameters():
+            p.requires_grad = False
+        # Train activation head
+        for p in self.activation_head.parameters():
+            p.requires_grad = True
+
+        return self
 
     def forward(self, input_ids, attention_mask, **kwargs):
         with torch.no_grad():
