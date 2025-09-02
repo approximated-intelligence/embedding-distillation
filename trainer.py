@@ -282,6 +282,8 @@ def main():
         "models/ettin-encoder-17m"
     )
 
+    student_model.setup_for_training()
+
     training_args = TrainingArguments(
         output_dir="./output",
         per_device_train_batch_size=batch_size,
