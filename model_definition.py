@@ -22,7 +22,12 @@ class ModernBertWithActivationHeadModel(ModernBertForMaskedLM):
 
         super().__init__(config)
 
-        self.activation_head = nn.Linear(config.hidden_size, 1)
+        self.activation_head = nn.Linear(
+            self.head.dense.in_features,  # ensure activation head fits encoder
+            1,
+            bias=False,  # we train without bias for the moment
+            device=self.head.dense.weight.device,  # ensure head is on some device as the original head
+        )
         # self.activation_head = nn.Sequential(
         #     nn.Linear(config.hidden_size, 2 * config.hidden_size),
         #     nn.ReLU(),
