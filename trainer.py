@@ -390,9 +390,6 @@ def main():
     print("Initial Recall:", end="")
     # Log results safely
     for k, recall_val in recalls.items():
-        state.log_history.append(
-            {"eval_recall@{}".format(k): recall_val, "step": state.global_step}
-        )
         print(f" @{k}:{recall_val:.2f}", end="")
     print(".")
 
