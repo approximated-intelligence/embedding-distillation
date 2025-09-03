@@ -188,6 +188,28 @@ def prepare_eval_data(eval_dataset):
     return unique_queries, unique_passages, labels_per_query
 
 
+def prepare_germanquad_for_benchmark(ds):
+    """
+    Convert HF Dataset (query/passage/label) to the format required by benchmark_model.
+    """
+    # Get unique queries and passages
+    unique_queries = list(set(ds["query"]))
+    unique_passages = list(set(ds["passage"]))
+
+    # Map passage text → index
+    passage_to_idx = {p: i for i, p in enumerate(unique_passages)}
+
+    # Build labels_per_query dict
+    labels_per_query = {
+        q: np.zeros(len(unique_passages), dtype=int) for q in unique_queries
+    }
+
+    for q, p, l in zip(ds["query"], ds["passage"], ds["label"]):
+        idx = passage_to_idx[p]
+        labels_per_query[q][idx] = l
+
+    return unique_queries, unique_passages, labels_per_query
+
 def benchmark_model(
     model,
     model_tokenizer,
