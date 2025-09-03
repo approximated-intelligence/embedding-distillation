@@ -244,24 +244,57 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_default_device(device)
     torch.set_float32_matmul_precision("high")
+
+    # -------------------------------
+    # Step 1: Somewhat realistic multirelation dataset
+    # -------------------------------
     import os
     
     queries = [
-        "What is the capital of France?",
-        "Who developed the theory of relativity?"
+        "What causes rainbows in the sky?",
+        "Who invented the telephone?",
+        "Which planets have rings in our Solar System?",
+        "What is the process of photosynthesis?",
+        "Who painted the Mona Lisa?",
     ]
-    
-    top_k_passages = [
+
+    all_passages = [
+        "Rainbows are formed due to the refraction and dispersion of sunlight through water droplets in the atmosphere.",
+        "Rainbows appear when sunlight interacts with raindrops after a storm.",
+        "Clouds are collections of tiny water droplets or ice crystals.",
+        "Alexander Graham Bell invented the first practical telephone in 1876.",
+        "Antonio Meucci developed an early version of the telephone before Bell.",
+        "The printing press was invented by Johannes Gutenberg in the 15th century.",
+        "Saturn has a prominent system of rings made of ice and rock particles.",
+        "Jupiter, Uranus, and Neptune also have ring systems.",
+        "Earth does not have a ring system.",
+        "Photosynthesis is the process by which plants convert sunlight into chemical energy.",
+        "Chlorophyll in leaves absorbs light energy to produce glucose and oxygen.",
+        "Fossil fuels are formed from ancient organic matter.",
+        "Leonardo da Vinci painted the Mona Lisa during the Italian Renaissance.",
+        "The Last Supper is another famous painting by Leonardo da Vinci.",
+        "Michelangelo sculpted David, not the Mona Lisa.",
+    ]
+
+    # Multi-relational relevance (indices of relevant passages)
+    query_relevant_indices = {
+        "What causes rainbows in the sky?": [0, 1],
+        "Who invented the telephone?": [3, 4],
+        "Which planets have rings in our Solar System?": [6, 7],
+        "What is the process of photosynthesis?": [9, 10],
+        "Who painted the Mona Lisa?": [12, 13],
+    }
+
+    # -------------------------------
+    # Step 1a: Prepare top passages per query for reranker
+    # -------------------------------
+    top_k_passages_per_query = [
         [
-            "Paris is the capital and most populous city of France.",
-            "Berlin is the capital of Germany.",
-            "Madrid is the capital of Spain."
-        ],
-        [
-            "Albert Einstein developed the theory of relativity.",
-            "Isaac Newton formulated the laws of motion.",
-            "Galileo made pioneering observations of the heavens."
+            p
+            for i, p in enumerate(all_passages)
+            if i in query_relevant_indices[q] or i % 3 == 0
         ]
+        for q in queries
     ]
 
     results = sglang_reranker_fn(queries, top_k_passages, base_url=base_url)
