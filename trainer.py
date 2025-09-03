@@ -286,7 +286,7 @@ class RecallEvaluationCallback(TrainerCallback):
 
     def on_save(self, args, state, control, model, **kwargs):
         """Compute recall@k evaluation when model is saved."""
-        print("Computing recall@k evaluation...")
+        print("Computing recall@k evaluation... ", end="", flush=True)
 
         # Validate rerank_k
         if self.rerank_fn is not None:
@@ -319,7 +319,7 @@ class RecallEvaluationCallback(TrainerCallback):
                 {"eval_recall@{}".format(k): recall_val, "step": state.global_step}
             )
             print(f" @{k}:{recall_val:.2f}", end="")
-        print(".")
+        print("")
 
 
 def main():
