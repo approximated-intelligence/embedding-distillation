@@ -395,7 +395,7 @@ def main():
         learning_rate=learning_rate,
         logging_steps=128,
         save_strategy="steps",
-        save_steps=1,  # 28,
+        save_steps=128,
         # eval_strategy="epoch",
         remove_unused_columns=False,
         dataloader_num_workers=0,
