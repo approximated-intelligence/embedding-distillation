@@ -17,6 +17,7 @@ from metrics_support import benchmark_model
 from metrics_support import sglang_reranker_fn
 from metrics_support import prepare_germanquad_for_benchmark
 from model_definition import ModernBertWithActivationHeadModel
+from model_definition import ModernBertWithSparseHeadModel
 from model_support import batch_encode_attached
 from model_support import batch_encode_bge_m3
 from model_support import batch_encode_detached
@@ -345,8 +346,8 @@ def main():
     train_dataset = (
         load_germandpr()
     )  # returns HF Dataset with 'query', 'passage', 'label'
-    eval_dataset = (
-        load_germanquad(split="test")
+    eval_dataset = load_germanquad(
+        split="test"
     )  # returns HF Dataset with 'query', 'passage', 'label'
 
     model_class = BGEM3FlagModel(
@@ -359,7 +360,7 @@ def main():
     bge_m3_model = model_class.model
 
     student_tokenizer = AutoTokenizer.from_pretrained("models/ettin-encoder-32m")
-    student_model = ModernBertWithActivationHeadModel.from_pretrained(
+    student_model = ModernBertWithSparseHeadModel.from_pretrained(
         "models/ettin-encoder-17m"
     )
 
