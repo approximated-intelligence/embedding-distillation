@@ -144,32 +144,42 @@ class ModernBertWithSparseHeadModel(ModernBertForMaskedLM):
         return self
 
     def forward(self, input_ids, attention_mask, **kwargs):
+        batch_size, seq_len = input_ids.shape
+        vocab_size = self.model.config.vocab_size
+
         with torch.no_grad():
             hidden = self.model(
                 input_ids=input_ids, attention_mask=attention_mask
             ).last_hidden_state.detach()
 
         if self.training:
-            scores = torch.relu(self.activation_head(hidden))
+            scores = torch.relu(self.activation_head(hidden)).squeeze(-1)
             embeddings = torch.zeros(
-                batch_size, self.vocab_size, dtype=hidden.dtype, device=hidden.device
+                batch_size,
+                vocab_size,
+                dtype=hidden.dtype,
+                device=hidden.device,
             )
             embeddings = embeddings.scatter_reduce_(
-                dim=1, index=input_ids, src=scores, reduce="amax", include_self=False
+                dim=1,
+                index=input_ids,
+                src=scores * attention_mask,
+                reduce="amax",
+                include_self=False,
             )
         else:
             with torch.no_grad():
-                scores = torch.relu(self.activation_head(hidden))
+                scores = torch.relu(self.activation_head(hidden)).squeeze(-1)
                 embeddings = torch.zeros(
                     batch_size,
-                    self.vocab_size,
+                    vocab_size,
                     dtype=hidden.dtype,
                     device=hidden.device,
                 )
                 embeddings = embeddings.scatter_reduce_(
                     dim=1,
                     index=input_ids,
-                    src=scores,
+                    src=scores * attention_mask,
                     reduce="amax",
                     include_self=False,
                 )
