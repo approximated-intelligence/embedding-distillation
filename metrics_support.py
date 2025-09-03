@@ -297,14 +297,17 @@ def main():
         for q in queries
     ]
 
-    results = sglang_reranker_fn(queries, top_k_passages, base_url=base_url)
-
-    for q, r in zip(queries, results):
+    # Call reranker and display results
+    reranked_results = sglang_reranker_fn(
+        queries, top_k_passages_per_query, base_url=base_url
+    )
+    for q, r in zip(queries, reranked_results):
         print(f"\nQuery: {q}")
         print("Reranked indices:", r)
         print("Passages in order:")
         for idx in r:
-            print(f"  - {top_k_passages[queries.index(q)][idx]}")
+            print(f"  - {top_k_passages_per_query[queries.index(q)][idx]}")
+
 
 
 if __name__ == "__main__":
