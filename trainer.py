@@ -329,7 +329,7 @@ def main():
     passage_pad_to = 64
     batch_size = 32
     dropout = 0.1
-    learning_rate = 1e-3
+    learning_rate = 2e-4
     evaluate_at_k = [1, 5, 10, 20, 50]
 
     base_url = os.environ.get("RERANKER_BASE_URL", "http://localhost:30000/v1")
