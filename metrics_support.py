@@ -206,16 +206,17 @@ def benchmark_model(
         dict: {k: recall@k} averaged across all queries
     """
     # Encode queries and passages with current model
-    query_embeddings = batch_encode_attached(
-        model, model_tokenizer, eval_queries, batch_size=batch_size
-    )
-    passage_embeddings = batch_encode_attached(
-        model, model_tokenizer, eval_passages, batch_size=batch_size
-    )
+    with torch.no_grad():
+        query_embeddings = batch_encode_attached(
+            model, model_tokenizer, eval_queries, batch_size=batch_size
+        )
+        passage_embeddings = batch_encode_attached(
+            model, model_tokenizer, eval_passages, batch_size=batch_size
+        )
 
     # Compute similarity matrix
     similarity_matrix = query_embeddings @ passage_embeddings.T
-    similarity_matrix = similarity_matrix.cpu().numpy()
+    similarity_matrix = similarity_matrix.detach().cpu().numpy()
 
     # Compute recall@k metrics
     recalls = average_recall_at_k(
