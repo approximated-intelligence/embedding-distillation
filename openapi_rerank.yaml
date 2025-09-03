@@ -1,0 +1,116 @@
+openapi: 3.0.3
+info:
+  title: SGLang Reranker API
+  version: 1.0.0
+  description: Reranking API for document relevance scoring
+
+servers:
+  - url: http://localhost:8080/v1
+
+paths:
+  /rerank:
+    post:
+      operationId: rerank
+      summary: Rerank documents against a query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RerankRequest'
+      responses:
+        '200':
+          description: Successful rerank response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RerankResponse'
+
+components:
+  schemas:
+    RerankRequest:
+      type: object
+      required:
+        - query
+        - documents
+      properties:
+        query:
+          type: string
+          description: The query text to rank documents against
+        documents:
+          type: array
+          items:
+            type: string
+          description: List of documents to be ranked
+        model:
+          type: string
+          default: "BAAI/bge-reranker-v2-m3"
+          description: Model to use for reranking
+        top_k:
+          type: integer
+          description: Maximum number of documents to return
+        return_documents:
+          type: boolean
+          default: true
+          description: Whether to return documents in addition to scores
+        rid:
+          description: Request ID for tracking
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        user:
+          type: string
+          description: User identifier
+
+    RerankResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RerankResult'
+          description: Ranked results sorted by score (highest first)
+        model:
+          type: string
+          description: Model used for reranking
+        usage:
+          $ref: '#/components/schemas/UsageInfo'
+        object:
+          type: string
+          default: "rerank"
+          description: Response object type
+        id:
+          type: string
+          description: Response ID
+        created:
+          type: integer
+          format: int64
+          description: Creation timestamp
+
+    RerankResult:
+      type: object
+      properties:
+        score:
+          type: number
+          format: float
+          description: Relevance score for the document
+        document:
+          type: string
+          description: The document text (if return_documents was true)
+        index:
+          type: integer
+          description: Original index of the document in the request
+        meta_info:
+          type: object
+          additionalProperties: true
+          description: Additional metadata about the ranking
+
+    UsageInfo:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+        total_tokens:
+          type: integer
