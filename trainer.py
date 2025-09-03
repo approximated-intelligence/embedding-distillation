@@ -346,7 +346,7 @@ def main():
         load_germandpr()
     )  # returns HF Dataset with 'query', 'passage', 'label'
     eval_dataset = (
-        load_germanquad()
+        load_germanquad(split="test")
     )  # returns HF Dataset with 'query', 'passage', 'label'
 
     model_class = BGEM3FlagModel(
