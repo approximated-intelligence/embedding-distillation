@@ -308,6 +308,70 @@ def main():
         for idx in r:
             print(f"  - {top_k_passages_per_query[queries.index(q)][idx]}")
 
+    # -------------------------------
+    # Step 2: Convert to long-format dataset for benchmarking
+    # -------------------------------
+    eval_dataset = {"query": [], "passage": [], "label": []}
+    for q in queries:
+        rel_idx_list = query_relevant_indices[q]
+        for i, p in enumerate(all_passages):
+            eval_dataset["query"].append(q)
+            eval_dataset["passage"].append(p)
+            eval_dataset["label"].append(1 if i in rel_idx_list else 0)
+
+    unique_queries, unique_passages, labels_per_query = prepare_eval_data(eval_dataset)
+    k_values = [1, 5, 10]
+
+    # -------------------------------
+    # Step 3: Load evaluation model
+    # -------------------------------
+    eval_model_name = "models/ettin-encoder-17m"
+    tokenizer = AutoTokenizer.from_pretrained(eval_model_name)
+    model = ModernBertWithActivationHeadModel.from_pretrained(eval_model_name)
+    model.eval()
+    model.to(device)
+
+    # -------------------------------
+    # Step 4: Benchmark w/o reranker
+    # -------------------------------
+    recalls = benchmark_model(
+        model,
+        tokenizer,
+        unique_queries,
+        unique_passages,
+        labels_per_query,
+        k_values,
+        batch_size=15,
+    )
+
+    # -------------------------------
+    # Step 4a: Print results
+    # -------------------------------
+    print("\nBenchmark results w/o reranker (recall@k):")
+    for k, r in recalls.items():
+        print(f"Recall@{k}: {r:.4f}")
+
+    # -------------------------------
+    # Step 5: Benchmark with reranker
+    # -------------------------------
+    recalls = benchmark_model(
+        model,
+        tokenizer,
+        unique_queries,
+        unique_passages,
+        labels_per_query,
+        k_values,
+        batch_size=15,
+        rerank_fn=lambda q, p: sglang_reranker_fn(q, p, base_url=base_url),
+        rerank_k=15,
+    )
+
+    # -------------------------------
+    # Step 5: Print results
+    # -------------------------------
+    print("\nBenchmark results with reranker (recall@k):")
+    for k, r in recalls.items():
+        print(f"Recall@{k}: {r:.4f}")
 
 
 if __name__ == "__main__":
