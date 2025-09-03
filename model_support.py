@@ -14,6 +14,8 @@ def batch_encode_detached(
 ):
     embeddings = []
 
+    device = next(model.parameters()).device
+
     for i in range(0, len(texts), batch_size):
         in_batch = texts[i : i + batch_size]
         inputs = tokenizer(
@@ -23,16 +25,15 @@ def batch_encode_detached(
             pad_to_multiple_of=pad_to,
             truncation=truncation,
             max_length=max_length,
-        ).to(model.device)
+        ).to(device)
 
         with torch.no_grad():
             hidden = model(**inputs).last_hidden_state
-            hidden.detach()
+            hidden = hidden.detach()
 
         scores = scorer(hidden)
         mask = inputs["attention_mask"].unsqueeze(-1)
         batch_emb = (hidden * scores * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
-        # batch_emb = (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
 
         embeddings.append(batch_emb)
 
@@ -97,6 +98,7 @@ def batch_encode_bge_m3(
     max_length=8192,
 ):
     embeddings = []
+    device = model.model.device
 
     for i in range(0, len(texts), batch_size):
         in_batch = texts[i : i + batch_size]
@@ -107,7 +109,7 @@ def batch_encode_bge_m3(
             pad_to_multiple_of=pad_to,
             truncation=truncation,
             max_length=max_length,
-        ).to(model.model.device)
+        ).to(device)
 
         with torch.no_grad():
             out = model(
