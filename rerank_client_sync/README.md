@@ -92,7 +92,6 @@ Class | Method | HTTP request | Description
 
  - [RerankRequest](docs/RerankRequest.md)
  - [RerankRequestRid](docs/RerankRequestRid.md)
- - [RerankResponse](docs/RerankResponse.md)
  - [RerankResult](docs/RerankResult.md)
  - [UsageInfo](docs/UsageInfo.md)
 

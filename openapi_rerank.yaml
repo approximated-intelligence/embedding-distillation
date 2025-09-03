@@ -64,30 +64,34 @@ components:
           type: string
           description: User identifier
 
+    # RerankResponse:
+    #   type: object
+    #   properties:
+    #     results:
+    #       type: array
+    #       items:
+    #         $ref: '#/components/schemas/RerankResult'
+    #       description: Ranked results sorted by score (highest first)
+    #     model:
+    #       type: string
+    #       description: Model used for reranking
+    #     usage:
+    #       $ref: '#/components/schemas/UsageInfo'
+    #     object:
+    #       type: string
+    #       default: "rerank"
+    #       description: Response object type
+    #     id:
+    #       type: string
+    #       description: Response ID
+    #     created:
+    #       type: integer
+    #       format: int64
+    #       description: Creation timestamp
     RerankResponse:
-      type: object
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/RerankResult'
-          description: Ranked results sorted by score (highest first)
-        model:
-          type: string
-          description: Model used for reranking
-        usage:
-          $ref: '#/components/schemas/UsageInfo'
-        object:
-          type: string
-          default: "rerank"
-          description: Response object type
-        id:
-          type: string
-          description: Response ID
-        created:
-          type: integer
-          format: int64
-          description: Creation timestamp
+      type: array
+      items:
+        $ref: '#/components/schemas/RerankResult'
 
     RerankResult:
       type: object

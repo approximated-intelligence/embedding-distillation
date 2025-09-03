@@ -8,7 +8,7 @@ Method | HTTP request | Description
 
 
 # **rerank**
-> RerankResponse rerank(rerank_request)
+> List[RerankResult] rerank(rerank_request)
 
 Rerank documents against a query
 
@@ -18,7 +18,7 @@ Rerank documents against a query
 ```python
 import rerank_client_sync
 from rerank_client_sync.models.rerank_request import RerankRequest
-from rerank_client_sync.models.rerank_response import RerankResponse
+from rerank_client_sync.models.rerank_result import RerankResult
 from rerank_client_sync.rest import ApiException
 from pprint import pprint
 
@@ -55,7 +55,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**RerankResponse**](RerankResponse.md)
+[**List[RerankResult]**](RerankResult.md)
 
 ### Authorization
 

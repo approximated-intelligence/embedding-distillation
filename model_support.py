@@ -8,11 +8,13 @@ def batch_encode_detached(
     texts,
     batch_size=32,
     padding="longest",
-    pad_to="16",
+    pad_to=16,
     truncation=True,
     max_length=8192,
 ):
     embeddings = []
+
+    device = next(model.parameters()).device
 
     for i in range(0, len(texts), batch_size):
         in_batch = texts[i : i + batch_size]
@@ -23,16 +25,15 @@ def batch_encode_detached(
             pad_to_multiple_of=pad_to,
             truncation=truncation,
             max_length=max_length,
-        ).to(model.device)
+        ).to(device)
 
         with torch.no_grad():
             hidden = model(**inputs).last_hidden_state
-            hidden.detach()
+            hidden = hidden.detach()
 
         scores = scorer(hidden)
         mask = inputs["attention_mask"].unsqueeze(-1)
         batch_emb = (hidden * scores * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
-        # batch_emb = (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
 
         embeddings.append(batch_emb)
 
@@ -45,11 +46,12 @@ def batch_encode_attached(
     texts,
     batch_size=32,
     padding="longest",
-    pad_to="16",
+    pad_to=16,
     truncation=True,
     max_length=8192,
 ):
     embeddings = []
+    device = next(model.parameters()).device
 
     for i in range(0, len(texts), batch_size):
         in_batch = texts[i : i + batch_size]
@@ -60,9 +62,19 @@ def batch_encode_attached(
             pad_to_multiple_of=pad_to,
             truncation=truncation,
             max_length=max_length,
-        ).to(model.device)
+        ).to(device)
 
-        batch_emb = model(**inputs)["embeddings"]
+        batch_out = model(**inputs)
+        # Try "embeddings" key first, fallback to pooler_output
+        if isinstance(batch_out, dict) and "embeddings" in batch_out:
+            batch_emb = batch_out["embeddings"]
+        else:
+            batch_emb = getattr(batch_out, "pooler_output", None)
+
+        if batch_emb is None:
+            raise ValueError(
+                "Model output has neither 'embeddings' key nor 'pooler_output'"
+            )
 
         embeddings.append(batch_emb)
 
@@ -97,6 +109,7 @@ def batch_encode_bge_m3(
     max_length=8192,
 ):
     embeddings = []
+    device = model.model.device
 
     for i in range(0, len(texts), batch_size):
         in_batch = texts[i : i + batch_size]
@@ -107,7 +120,7 @@ def batch_encode_bge_m3(
             pad_to_multiple_of=pad_to,
             truncation=truncation,
             max_length=max_length,
-        ).to(model.model.device)
+        ).to(device)
 
         with torch.no_grad():
             out = model(

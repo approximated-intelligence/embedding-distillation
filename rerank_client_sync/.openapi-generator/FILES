@@ -7,7 +7,6 @@ README.md
 docs/DefaultApi.md
 docs/RerankRequest.md
 docs/RerankRequestRid.md
-docs/RerankResponse.md
 docs/RerankResult.md
 docs/UsageInfo.md
 git_push.sh
@@ -23,7 +22,6 @@ rerank_client_sync/exceptions.py
 rerank_client_sync/models/__init__.py
 rerank_client_sync/models/rerank_request.py
 rerank_client_sync/models/rerank_request_rid.py
-rerank_client_sync/models/rerank_response.py
 rerank_client_sync/models/rerank_result.py
 rerank_client_sync/models/usage_info.py
 rerank_client_sync/py.typed
@@ -35,7 +33,6 @@ test/__init__.py
 test/test_default_api.py
 test/test_rerank_request.py
 test/test_rerank_request_rid.py
-test/test_rerank_response.py
 test/test_rerank_result.py
 test/test_usage_info.py
 tox.ini
