@@ -329,7 +329,7 @@ def main():
     passage_pad_to = 64
     batch_size = 32
     dropout = 0.1
-    learning_rate = 1e-3
+    learning_rate = 2e-4
     evaluate_at_k = [1, 5, 10, 20, 50]
 
     base_url = os.environ.get("RERANKER_BASE_URL", "http://localhost:30000/v1")
@@ -373,6 +373,28 @@ def main():
     unique_queries, unique_passages, labels_per_query = (
         prepare_germanquad_for_benchmark(eval_dataset)
     )
+
+    # Benchmark with proper full-length inputs
+    recalls = benchmark_model(
+        model=student_model,
+        tokenizer=student_tokenizer,
+        eval_queries=unique_queries,
+        eval_passages=unique_passages,
+        labels_per_query=labels_per_query,
+        k_values=evaluate_at_k,
+        batch_size=batch_size,
+        # rerank_fn=lambda q, p: sglang_reranker_fn(q, p, base_url=base_url),
+        # rerank_k=50
+    )
+
+    print("Initial Recall:", end="")
+    # Log results safely
+    for k, recall_val in recalls.items():
+        state.log_history.append(
+            {"eval_recall@{}".format(k): recall_val, "step": state.global_step}
+        )
+        print(f" @{k}:{recall_val:.2f}", end="")
+    print(".")
 
     # Instantiate callback
     recall_callback = RecallEvaluationCallback(
