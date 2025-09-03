@@ -57,8 +57,11 @@ def single_recall_at_k(sorted_indices, labels, k_values):
         dict: {k: recall@k} for each k
     """
     sorted_labels = labels[sorted_indices]
+    # print("sorted_labels:", sorted_labels)
     relevant_cumsum = np.cumsum(sorted_labels)
+    # print("relevant_cumsum:", relevant_cumsum)
     total_relevant = np.sum(labels)
+    # print("total_relevant:", total_relevant)
 
     if total_relevant == 0:
         return {k: 0.0 for k in k_values}
@@ -74,6 +77,7 @@ def single_recall_at_k(sorted_indices, labels, k_values):
         found = relevant_cumsum[k - 1]
         max_possible = min(total_relevant, k)
         recalls[k] = found / max_possible
+        # print(f"k: {k}, found: {found}, max_possible: {max_possible}, recall@{k}={recalls[k]}")
 
     return recalls
 
