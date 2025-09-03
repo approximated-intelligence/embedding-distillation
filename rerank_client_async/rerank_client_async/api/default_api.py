@@ -16,8 +16,9 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
+from typing import List
 from rerank_client_async.models.rerank_request import RerankRequest
-from rerank_client_async.models.rerank_response import RerankResponse
+from rerank_client_async.models.rerank_result import RerankResult
 
 from rerank_client_async.api_client import ApiClient, RequestSerialized
 from rerank_client_async.api_response import ApiResponse
@@ -53,7 +54,7 @@ class DefaultApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> RerankResponse:
+    ) -> List[RerankResult]:
         """Rerank documents against a query
 
 
@@ -90,7 +91,7 @@ class DefaultApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "RerankResponse",
+            '200': "List[RerankResult]",
         }
         response_data = await self.api_client.call_api(
             *_param,
@@ -119,7 +120,7 @@ class DefaultApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[RerankResponse]:
+    ) -> ApiResponse[List[RerankResult]]:
         """Rerank documents against a query
 
 
@@ -156,7 +157,7 @@ class DefaultApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "RerankResponse",
+            '200': "List[RerankResult]",
         }
         response_data = await self.api_client.call_api(
             *_param,
@@ -222,7 +223,7 @@ class DefaultApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "RerankResponse",
+            '200': "List[RerankResult]",
         }
         response_data = await self.api_client.call_api(
             *_param,

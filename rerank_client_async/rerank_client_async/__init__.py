@@ -33,6 +33,5 @@ from rerank_client_async.exceptions import ApiException
 # import models into sdk package
 from rerank_client_async.models.rerank_request import RerankRequest
 from rerank_client_async.models.rerank_request_rid import RerankRequestRid
-from rerank_client_async.models.rerank_response import RerankResponse
 from rerank_client_async.models.rerank_result import RerankResult
 from rerank_client_async.models.usage_info import UsageInfo
