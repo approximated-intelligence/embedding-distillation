@@ -188,13 +188,36 @@ def prepare_eval_data(eval_dataset):
     return unique_queries, unique_passages, labels_per_query
 
 
+def prepare_germanquad_for_benchmark(ds):
+    """
+    Convert HF Dataset (query/passage/label) to the format required by benchmark_model.
+    """
+    # Get unique queries and passages
+    unique_queries = list(set(ds["query"]))
+    unique_passages = list(set(ds["passage"]))
+
+    # Map passage text → index
+    passage_to_idx = {p: i for i, p in enumerate(unique_passages)}
+
+    # Build labels_per_query dict
+    labels_per_query = {
+        q: np.zeros(len(unique_passages), dtype=int) for q in unique_queries
+    }
+
+    for q, p, l in zip(ds["query"], ds["passage"], ds["label"]):
+        idx = passage_to_idx[p]
+        labels_per_query[q][idx] = l
+
+    return unique_queries, unique_passages, labels_per_query
+
+
 def benchmark_model(
-    model,
-    model_tokenizer,
-    eval_queries,
-    eval_passages,
-    labels_per_query,
-    k_values,
+    model=None,
+    tokenizer=None,
+    eval_queries=None,
+    eval_passages=None,
+    labels_per_query=None,
+    k_values=None,
     batch_size=32,
     rerank_fn=None,
     rerank_k=None,
@@ -204,7 +227,7 @@ def benchmark_model(
 
     Args:
         model: student model to evaluate
-        model_tokenizer: tokenizer for the student model
+        tokenizer: tokenizer for the student model
         eval_queries: list of unique query strings
         eval_passages: list of unique passage strings
         labels_per_query: dict mapping query -> binary label array for all passages
@@ -219,10 +242,10 @@ def benchmark_model(
     # Encode queries and passages with current model
     with torch.no_grad():
         query_embeddings = batch_encode_attached(
-            model, model_tokenizer, eval_queries, batch_size=batch_size
+            model, tokenizer, eval_queries, batch_size=batch_size
         )
         passage_embeddings = batch_encode_attached(
-            model, model_tokenizer, eval_passages, batch_size=batch_size
+            model, tokenizer, eval_passages, batch_size=batch_size
         )
 
     # Compute similarity matrix
@@ -248,8 +271,12 @@ def main():
     # Step 0: Setup
     # -------------------------------
     base_url = os.environ.get("RERANKER_BASE_URL", "http://localhost:30000")
+
+    # set default device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_default_device(device)
+
+    # use fast float32 computations
     torch.set_float32_matmul_precision("high")
 
     # -------------------------------
@@ -340,12 +367,12 @@ def main():
     # Step 4: Benchmark w/o reranker
     # -------------------------------
     recalls = benchmark_model(
-        model,
-        tokenizer,
-        unique_queries,
-        unique_passages,
-        labels_per_query,
-        k_values,
+        model=model,
+        tokenizer=tokenizer,
+        eval_queries=unique_queries,
+        eval_passages=unique_passages,
+        labels_per_query=labels_per_query,
+        k_values=k_values,
         batch_size=15,
     )
 
@@ -360,12 +387,12 @@ def main():
     # Step 5: Benchmark with reranker
     # -------------------------------
     recalls = benchmark_model(
-        model,
-        tokenizer,
-        unique_queries,
-        unique_passages,
-        labels_per_query,
-        k_values,
+        model=model,
+        tokenizer=tokenizer,
+        eval_queries=unique_queries,
+        eval_passages=unique_passages,
+        labels_per_query=labels_per_query,
+        k_values=k_values,
         batch_size=15,
         rerank_fn=lambda q, p: sglang_reranker_fn(q, p, base_url=base_url),
         rerank_k=15,
