@@ -1,6 +1,11 @@
+import os
+import torch
 import numpy as np
+from transformers import AutoModel, AutoTokenizer
+
 import rerank_client_sync
 
+from model_definition import ModernBertWithActivationHeadModel
 from model_support import batch_encode_attached
 
 
@@ -248,8 +253,6 @@ def main():
     # -------------------------------
     # Step 1: Somewhat realistic multirelation dataset
     # -------------------------------
-    import os
-    
     queries = [
         "What causes rainbows in the sky?",
         "Who invented the telephone?",
