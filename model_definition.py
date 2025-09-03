@@ -38,7 +38,7 @@ class ModernBertWithActivationHeadModel(ModernBertForMaskedLM):
         # HF weight init for new layers
         self.post_init()
 
-     def setup_for_training(self):
+    def setup_for_training(self):
         # Freeze original layers
         for p in self.model.parameters():
             p.requires_grad = False
