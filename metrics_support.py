@@ -270,7 +270,7 @@ def main():
     # -------------------------------
     # Step 0: Setup
     # -------------------------------
-    base_url = os.environ.get("RERANKER_BASE_URL", "http://localhost:30000")
+    base_url = os.environ.get("RERANKER_BASE_URL", "http://localhost:30000/v1")
 
     # set default device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
