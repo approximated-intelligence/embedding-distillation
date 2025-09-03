@@ -9,42 +9,44 @@ from model_definition import ModernBertWithActivationHeadModel
 from model_support import batch_encode_attached
 
 
-def sglang_reranker_fn(queries, top_k_passages, base_url="http://localhost:30000/v1", model="BAAI/bge-reranker-v2-m3"):
+def sglang_reranker_fn(
+    queries,
+    top_k_passages,
+    base_url="http://localhost:30000/v1",
+    model="BAAI/bge-reranker-v2-m3",
+):
     """
     Reranker function using SGLang reranker API.
-    
+
     Args:
         queries: list of query strings
         top_k_passages: list of lists - top_k_passages[i] contains passages for queries[i]
         port: SGLang server port
         model: reranker model name
-        
+
     Returns:
         list of argsorted indices for each query (relative to their passages)
     """
-    
+
     config = rerank_client_sync.Configuration(host=base_url)
-    
+
     with rerank_client_sync.ApiClient(config) as api_client:
         api = rerank_client_sync.DefaultApi(api_client)
-        
+
         reranked_indices = []
-        
+
         for query, passages in zip(queries, top_k_passages):
             request = rerank_client_sync.RerankRequest(
-                query=query,
-                documents=passages,
-                model=model,
-                return_documents=False
+                query=query, documents=passages, model=model, return_documents=False
             )
-            
+
             response = api.rerank(request)
-            
+
             # Extract indices sorted by score (already sorted by API)
             indices = [result.index for result in response]
 
             reranked_indices.append(indices)
-            
+
         return reranked_indices
 
 
