@@ -1,0 +1,9 @@
+inputSpec: openapi_rerank.yaml
+generatorName: python
+outputDir: ./rerank_client_async
+additionalProperties:
+  packageName: rerank_client_async
+  packageUrl: 
+  packageVersion: 0.9.0
+  library: asyncio
+  generateSourceCodeOnly: false

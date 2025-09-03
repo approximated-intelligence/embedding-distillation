@@ -1,0 +1,9 @@
+inputSpec: openapi_rerank.yaml
+generatorName: python
+outputDir: ./rerank_client_sync
+additionalProperties:
+  packageName: rerank_client_sync
+  packageUrl: 
+  packageVersion: 0.9.0
+  library: urllib3
+  generateSourceCodeOnly: false
