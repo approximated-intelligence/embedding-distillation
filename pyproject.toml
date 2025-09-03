@@ -11,5 +11,11 @@ dependencies = [
     "flagembedding>=1.3.5",
     "huggingface-hub[cli]>=0.34.4",
     "isort>=6.0.1",
+    "rerank-client-async",
+    "rerank-client-sync",
     "torch>=2.8.0",
 ]
+
+[tool.uv.sources]
+rerank-client-sync = { path = "rerank_client_sync" }
+rerank-client-async = { path = "rerank_client_async" }
