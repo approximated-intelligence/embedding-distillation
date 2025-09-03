@@ -332,7 +332,7 @@ def main():
     learning_rate = 1e-3
     evaluate_at_k = [1, 5, 10, 20, 50]
 
-    base_url = os.environ.get("RERANKER_BASE_URL", "http://localhost:30000")
+    base_url = os.environ.get("RERANKER_BASE_URL", "http://localhost:30000/v1")
 
     # set default device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
