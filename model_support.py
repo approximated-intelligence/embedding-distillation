@@ -8,7 +8,7 @@ def batch_encode_detached(
     texts,
     batch_size=32,
     padding="longest",
-    pad_to="16",
+    pad_to=16,
     truncation=True,
     max_length=8192,
 ):
@@ -46,7 +46,7 @@ def batch_encode_attached(
     texts,
     batch_size=32,
     padding="longest",
-    pad_to="16",
+    pad_to=16,
     truncation=True,
     max_length=8192,
 ):
