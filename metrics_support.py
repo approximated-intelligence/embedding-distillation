@@ -237,6 +237,13 @@ def benchmark_model(
 
 
 def main():
+    # -------------------------------
+    # Step 0: Setup
+    # -------------------------------
+    base_url = os.environ.get("RERANKER_BASE_URL", "http://localhost:30000")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.set_default_device(device)
+    torch.set_float32_matmul_precision("high")
     import os
     
     queries = [
@@ -256,8 +263,6 @@ def main():
             "Galileo made pioneering observations of the heavens."
         ]
     ]
-
-    base_url = os.environ.get("RERANKER_BASE_URL", "http://localhost:30000")
 
     results = sglang_reranker_fn(queries, top_k_passages, base_url=base_url)
 
